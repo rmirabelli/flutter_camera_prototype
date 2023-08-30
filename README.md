@@ -2,15 +2,16 @@
 
 A new Flutter project.
 
-## Getting Started
+## Tasks for 8/30 - 9/1
 
-This project is a starting point for a Flutter application.
+- Camera and gallery via package
+- permissions for both platforms
+- permissions on a screen BEFORE buttons appear
+- save images to local directory
+- resize images if larger than set size
+- browse saved images (maybe even build a script to allow this, but it's just for me...)
+- rename saved images
+- create a file naming said saved images
+- gallery
+- timings of builds on M1air vs M1pro(sophos)
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
