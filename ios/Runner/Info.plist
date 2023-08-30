@@ -47,5 +47,16 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>In order to allow you to select a photo, I need to see your photos.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>In order to take a photo, I need to use your camera.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Because of live photos, I need access to your microphone to take pictures. This makes no sense, but it's not my choice.</string>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
+    <key>UIFileSharingEnabled</key>
+    <true/>
+
 </dict>
 </plist>
