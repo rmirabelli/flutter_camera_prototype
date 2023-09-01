@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:image/image.dart' as img;
 
 void main() {
   runApp(const MyApp());
@@ -37,27 +39,97 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Image> images = [];
   final ImagePicker picker = ImagePicker();
 
+  _updateImageList() async {
+    // realistically, search a directory named after the claim, not the
+    // full documents directory.
+    final Directory directory = await getApplicationDocumentsDirectory();
+    final List<FileSystemEntity> files = directory.listSync();
+    List<Image> tempImages = [];
+    for (final file in files) {
+      final image = Image.file(File(file.path));
+      tempImages.add(image);
+    }
+    setState(() {
+      images = tempImages;
+    });
+  }
+
+  _getCameraPermissions() async {
+    final PermissionStatus status = await Permission.camera.request();
+    if (status.isGranted) {
+      // do nothing
+    } else {
+      // do something
+    }
+  }
+
+  _getMicrophonePermissions() async {
+    final PermissionStatus status = await Permission.microphone.request();
+    if (status.isGranted) {
+      // do nothing
+    } else {
+      // do something
+    }
+  }
+
+  _getGalleryPermissions() async {
+    final PermissionStatus status = await Permission.mediaLibrary.request();
+    if (status.isGranted) {
+      // do nothing
+    } else {
+      // do something
+    }
+  }
+
   _selectPhotos() async {
     final Directory directory = await getApplicationDocumentsDirectory();
     final List<XFile?> selectedImages =
         await picker.pickMultiImage(requestFullMetadata: false);
     for (final image in selectedImages) {
       final name = image!.name;
-      image.saveTo('${directory.path}/$name');
+      await image.saveTo('${directory.path}/$name');
+      await _resizeImage(image);
     }
-    setState(() {
-      // eventually set the list of images, so there's something meaningful as a result.
-    });
+    _updateImageList();
   }
 
   _takeNewPhoto() async {
-    final XFile? selectedImages = await picker.pickImage(
+    final Directory directory = await getApplicationDocumentsDirectory();
+    final XFile? image = await picker.pickImage(
         source: ImageSource.camera, requestFullMetadata: false);
-    print('$selectedImages.length');
+    image?.saveTo('${directory.path}/${image.name}');
+    _updateImageList();
+  }
 
-    setState(() {
-      // eventually set the list of images, so there's something meaningful as a result.
-    });
+  // Resizes an image to 1/4 its size, to save space and upload time.
+  // Note that this should not be used unless required.
+  Future<XFile?> _resizeImage(XFile? image) async {
+    if (image == null) {
+      return null;
+    }
+
+    const maxSize = 1 * 1024 * 1024; // 1 MB
+    final fileSize = await image.length();
+    if (fileSize < maxSize) {
+      return image;
+    }
+
+    final original = await img.decodeImageFile(image.path);
+    if (original == null) {
+      return null;
+    }
+
+    final originalHeight = original.height;
+    final computedHeight = originalHeight / 2;
+    final resized = img.copyResize(original, height: computedHeight.toInt());
+    final jpeg = img.encodeJpg(resized, quality: 85);
+
+    final Directory directory = await getApplicationDocumentsDirectory();
+    final replacementPath = image.path.replaceAll('image_picker', 'resized');
+    final xfile = XFile.fromData(jpeg, path: replacementPath);
+    await xfile.saveTo('${directory.path}/${xfile.name}');
+    await File(image.path).delete();
+    return xfile;
   }
 
   @override
@@ -67,14 +139,17 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'Gallery will go here, roughly',
-            ),
-          ],
+      body: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const Text(
+                'Gallery will go here, roughly',
+              ),
+              ...images.map((e) => SizedBox(child: e, height: 100, width: 100)),
+            ],
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
