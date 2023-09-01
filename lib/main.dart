@@ -5,6 +5,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image/image.dart' as img;
 
+// A single-screen app to go over most of the photo functionality.
+// There's definitely cleanup work to do, but the core elements
+// _work_, which is the important part.
+
 void main() {
   runApp(const MyApp());
 }
@@ -15,7 +19,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Camera Prototype',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -41,7 +45,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   _updateImageList() async {
     // realistically, search a directory named after the claim, not the
-    // full documents directory.
+    // full documents directory, OR filter based on the claim name.
     final Directory directory = await getApplicationDocumentsDirectory();
     final List<FileSystemEntity> files = directory.listSync();
     List<Image> tempImages = [];
@@ -54,33 +58,38 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  _getCameraPermissions() async {
-    final PermissionStatus status = await Permission.camera.request();
-    if (status.isGranted) {
-      // do nothing
-    } else {
-      // do something
+  // check the permissions on page load and after each action.
+  // This will allow us to disable the buttons if the user has not
+  // granted permissions.
+  // We don't want to ask for permissions on page load, because
+  // that's annoying and we don't want to do it every time.
+  // This is going to give us the best user experience and allow
+  // rate.
+  // The camera button should require both camera and microphone
+  // (microphone may be a null operation on android) because
+  // of live photos.
+  _checkCameraPermissions() async {
+    final PermissionStatus status = await Permission.camera.status;
+    if (status.isDenied) {
+      // Disable the button
     }
   }
 
-  _getMicrophonePermissions() async {
-    final PermissionStatus status = await Permission.microphone.request();
-    if (status.isGranted) {
-      // do nothing
-    } else {
-      // do something
+  _checkMicrophonePermissions() async {
+    final PermissionStatus status = await Permission.microphone.status;
+    if (status.isDenied) {
+      // Disable the button
     }
   }
 
-  _getGalleryPermissions() async {
-    final PermissionStatus status = await Permission.mediaLibrary.request();
-    if (status.isGranted) {
-      // do nothing
-    } else {
-      // do something
+  _checkGalleryPermissions() async {
+    final PermissionStatus status = await Permission.mediaLibrary.status;
+    if (status.isDenied) {
+      // Disable the button
     }
   }
 
+  // choose photos from the image picker.
   _selectPhotos() async {
     final Directory directory = await getApplicationDocumentsDirectory();
     final List<XFile?> selectedImages =
@@ -93,22 +102,26 @@ class _MyHomePageState extends State<MyHomePage> {
     _updateImageList();
   }
 
+  // choose photos from the camera.
   _takeNewPhoto() async {
     final Directory directory = await getApplicationDocumentsDirectory();
     final XFile? image = await picker.pickImage(
         source: ImageSource.camera, requestFullMetadata: false);
     image?.saveTo('${directory.path}/${image.name}');
+    // resize it, I suppose.
     _updateImageList();
   }
 
   // Resizes an image to 1/4 its size, to save space and upload time.
-  // Note that this should not be used unless required.
+  // Note that this should not be used unless required (i.e. this won't)
+  // resize unless we're larger than the max size, but the max size in
+  // this function is set pretty darn low, so we can test it easily.
   Future<XFile?> _resizeImage(XFile? image) async {
     if (image == null) {
       return null;
     }
 
-    const maxSize = 1 * 1024 * 1024; // 1 MB
+    const maxSize = 1 * 1024 * 1024; // 1 MB, needs to be 10 for shippping
     final fileSize = await image.length();
     if (fileSize < maxSize) {
       return image;
