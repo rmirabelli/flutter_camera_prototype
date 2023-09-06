@@ -9,6 +9,10 @@ import 'package:image/image.dart' as img;
 // There's definitely cleanup work to do, but the core elements
 // _work_, which is the important part.
 
+// The 'img' package is needed because the traditional Image class
+// doesn't have a resize function.  This is a bit of a pain, but
+// it's not too bad.
+
 void main() {
   runApp(const MyApp());
 }
